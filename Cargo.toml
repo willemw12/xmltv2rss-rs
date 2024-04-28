@@ -1,0 +1,32 @@
+[package]
+name = "xmltv2rss"
+version = "0.1.0"
+authors = ["willemw12 <willemw12@gmail.com>"]
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "Generate an RSS feed from an XMLTV TV listing."
+homepage = "https://github.com/willemw12/xmltv2rss-rs"
+#documentation = "https://github.com/willemw12/xmltv2rss-rs"
+repository = "https://github.com/willemw12/xmltv2rss-rs"
+readme = "README.md"
+keywords = ["epg", "rss", "tv", "xmltv"]
+categories = ["command-line-utilities"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# [[bin]]
+# name = "xmltv2rss"
+# required-features = ["build-binary"]
+#
+# [features]
+# build-binary = ["dep:clap"]
+
+[dependencies]
+# clap = { version = "4.5.4", features = ["cargo", "derive"], optional = true }
+clap = { version = "4.5.4", features = ["cargo", "derive"] }
+chrono = "0.4.38"
+derive_builder = "0.20.0"
+quick-xml = { version = "0.31", features = ["serialize"] }
+rss = "2.0.7"
+thiserror = "1.0.59"
+xmltv = "0.9.5"
