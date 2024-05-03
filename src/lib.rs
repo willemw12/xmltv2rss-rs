@@ -12,8 +12,8 @@
 //!     .language("en")
 //!     .build()?;
 //!
-//! let channel = export("Title", "https://example.com/", &options,
-//!                      Some("./tests/input/simple.xml"))?;
+//! let channel = export("Title", "https://example.com/", Some("Description"),
+//!                      &options, Some("./tests/input/simple.xml"))?;
 //!
 //! channel.pretty_write_to(io::stdout(), b' ', 2)?;
 //! # Ok::<(), xmltv2rss::xmltv::Error>(())

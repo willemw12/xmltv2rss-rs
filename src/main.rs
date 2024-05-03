@@ -10,7 +10,10 @@ mod export;
 mod xmltv;
 
 use export::rss::{export, OptionsBuilder};
-use export::rss::{DEFAULT_RSS_CHANNEL_TITLE, DEFAULT_RSS_DATE_FORMAT, DEFAULT_RSS_TIME_FORMAT};
+use export::rss::{
+    DEFAULT_RSS_CHANNEL_DESCRIPTION, DEFAULT_RSS_CHANNEL_TITLE, DEFAULT_RSS_DATE_FORMAT,
+    DEFAULT_RSS_TIME_FORMAT,
+};
 use xmltv::Error;
 use xmltv::{DEFAULT_XMLTV_DATETIME_FORMAT, DEFAULT_XMLTV_DATETIME_FORMAT_UTC};
 
@@ -26,6 +29,10 @@ struct Args {
     /// RSS feed date format. Examples: "%%Y-%%m-%%d", "%%a %%d %%B, %%Y", "%%x".
     #[arg(long, short = 'd', default_value = DEFAULT_RSS_DATE_FORMAT)]
     feed_date_format: String,
+
+    /// RSS feed description.
+    #[arg(long, default_value = DEFAULT_RSS_CHANNEL_DESCRIPTION)]
+    feed_description: String,
 
     /// RSS feed indentation.
     #[arg(long, default_value_t = DEFAULT_XML_INDENT)]
@@ -73,6 +80,7 @@ fn run(args: Args) -> Result<(), Error> {
     let channel = export(
         &args.feed_title,
         &args.feed_link,
+        Some(&args.feed_description),
         &options,
         args.file.as_deref(),
     )?;

@@ -82,7 +82,8 @@ Library usage
         .language("en")
         .build()?;
     
-    let channel = export("Title", "https://example.com/", &options, Some("file.xml"))?;
+    let channel = export("Title", "https://example.com/", Some("Description"),
+                         &options, Some("file.xml"))?;
     
     channel.pretty_write_to(io::stdout(), b' ', 2)?;
 

@@ -52,6 +52,7 @@ impl Default for Options<'_> {
 pub fn export(
     title: &str,
     link: &str,
+    description: Option<&str>,
     options: &Options,
     // mut reader: impl Read,
     file: Option<&str>,
@@ -69,6 +70,7 @@ pub fn export(
     let mut visitor = Rss::new(
         title,
         link,
+        description,
         Some(pub_date),
         Some(last_build_date),
         options,
@@ -84,7 +86,7 @@ pub fn export(
 pub(crate) struct Rss<'a> {
     title: &'a str,
     link: &'a str,
-    // description: &'a str,
+    description: Option<&'a str>,
     pub_date: Option<DateTime<Local>>,
     last_build_date: Option<DateTime<Local>>,
     options: &'a Options<'a>,
@@ -99,7 +101,7 @@ impl<'a> Rss<'a> {
     pub fn new(
         title: &'a str,
         link: &'a str,
-        // description: &'a str,
+        description: Option<&'a str>,
         pub_date: Option<DateTime<Local>>,
         last_build_date: Option<DateTime<Local>>,
         options: &'a Options,
@@ -116,7 +118,7 @@ impl<'a> Rss<'a> {
         Self {
             title,
             link,
-            // description,
+            description,
             pub_date,
             last_build_date,
             options,
@@ -196,7 +198,7 @@ impl<'a> Visitor for Rss<'a> {
         self.channel
             .title(self.title)
             .link(self.link)
-            .description(DEFAULT_RSS_CHANNEL_DESCRIPTION);
+            .description(self.description.unwrap_or(DEFAULT_RSS_CHANNEL_DESCRIPTION));
 
         // let mut channel = self.channel;
         if let Some(language) = self.options.language {
@@ -368,6 +370,7 @@ mod tests {
             let mut visitor = Rss::new(
                 DEFAULT_RSS_CHANNEL_TITLE,
                 link,
+                None,
                 Some(pub_date.into()),
                 Some(last_build_date.into()),
                 &options,
