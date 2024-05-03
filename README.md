@@ -73,19 +73,21 @@ Usage
 Library usage
 -------------
 
-    use std::io;
-    use xmltv2rss::export::rss::{export, OptionsBuilder};
-    
-    // let options = Options::default();
-    let options = OptionsBuilder::default()
-        // .language(string.as_str())
-        .language("en")
-        .build()?;
-    
-    let channel = export("Title", "https://example.com/", Some("Description"),
-                         &options, Some("file.xml"))?;
-    
-    channel.pretty_write_to(io::stdout(), b' ', 2)?;
+```rust
+use std::io;
+use xmltv2rss::export::rss::{export, OptionsBuilder};
+
+// let options = Options::default();
+let options = OptionsBuilder::default()
+    // .language(string.as_str())
+    .language("en")
+    .build()?;
+
+let channel = export("Title", "https://example.com/", Some("Description"),
+                     &options, Some("file.xml"))?;
+
+channel.pretty_write_to(io::stdout(), b' ', 2)?;
+```
 
 
 License
