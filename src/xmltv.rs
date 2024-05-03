@@ -6,7 +6,7 @@ use xmltv::{NameAndLang, Url, ValueAndLang};
 
 use crate::export::rss::OptionsBuilderError;
 
-/// Datetime without timezone
+/// Datetime with timezone
 pub const DEFAULT_XMLTV_DATETIME_FORMAT: &str = "%Y%m%d%H%M%S %z";
 /// Datetime without timezone
 pub const DEFAULT_XMLTV_DATETIME_FORMAT_UTC: &str = "%Y%m%d%H%M%S";
@@ -52,11 +52,17 @@ pub(crate) fn find_value<'a>(elements: &'a [ValueAndLang], language: Option<&'a 
         .map_or("", |e| &e.value)
 }
 
+// /// Returns the first URL string or an empty string.
 // pub(crate) fn first_url(urls: &[Url]) -> &str {
 //     urls.first().map_or("", |url| &url.value)
 // }
 
-/// Tries to return the first URL.
+// /// Tries to return the first URL string.
+// pub(crate) fn first_url(urls: &[Url]) -> Option<&str> {
+//     urls.first().map(|url| &url.value).map(|url| url.as_str())
+// }
+
+/// Tries to return the first URL string.
 pub(crate) fn first_url(urls: &[Url]) -> Option<String> {
     urls.first().map(|url| &url.value).cloned()
 }

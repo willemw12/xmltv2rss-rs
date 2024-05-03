@@ -190,7 +190,7 @@ impl<'a> Rss<'a> {
     }
 }
 
-impl<'a> Visitor for Rss<'a> {
+impl Visitor for Rss<'_> {
     type Output = Channel;
 
     /// Exports from XMLTV TV listing to RSS channel.
@@ -202,7 +202,6 @@ impl<'a> Visitor for Rss<'a> {
 
         // let mut channel = self.channel;
         if let Some(language) = self.options.language {
-            // self.channel.language(language);
             self.channel.language(language.to_string());
         }
         if let Some(pub_date) = self.pub_date {
@@ -269,9 +268,6 @@ impl<'a> Visitor for Rss<'a> {
         let pub_date = starttime_dt.to_rfc2822();
 
         let item = ItemBuilder::default()
-            // .title(title)
-            // .link(link.unwrap_or_default())
-            // .description(description)
             .title(title.to_string())
             .link(link)
             .description(description.to_string())

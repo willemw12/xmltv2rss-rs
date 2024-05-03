@@ -29,4 +29,4 @@ derive_builder = "0.20.0"
 quick-xml = { version = "0.31", features = ["serialize"] }
 rss = "2.0.7"
 thiserror = "1.0.59"
-xmltv = "0.9.5"
+xmltv = "0.9.6"
