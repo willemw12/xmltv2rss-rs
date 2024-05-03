@@ -302,7 +302,6 @@ mod tests {
     use std::fs;
 
     use super::*;
-
     use crate::export;
 
     const DEFAULT_XML_INDENT: usize = 2;

@@ -1,6 +1,6 @@
 [package]
 name = "xmltv2rss"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["willemw12 <willemw12@gmail.com>"]
 edition = "2021"
 license = "GPL-3.0-or-later"
