@@ -32,36 +32,39 @@ Usage
     Options:
       -d, --feed-date-format <FEED_DATE_FORMAT>
               RSS feed date format. Examples: "%%Y-%%m-%%d", "%%a %%d %%B, %%Y", "%%x"
-              
+    
               [default: "%a %d %B, %Y"]
+    
+          --feed-description <FEED_DESCRIPTION>
+              RSS feed description
+    
+          --feed-indent <FEED_INDENT>
+              RSS feed indentation
+    
+              [default: 2]
     
           --feed-language <FEED_LANGUAGE>
               RSS feed language
     
+          --feed-link <FEED_LINK>
+              RSS feed URL
+    
+              [default: ]
+    
       -t, --feed-time-format <FEED_TIME_FORMAT>
               RSS feed time format. Examples: "%%H:%%M", "%%I:%%M %%p", "%%X"
-              
+    
               [default: %H:%M]
     
           --feed-title <FEED_TITLE>
               RSS feed title
-              
+    
               [default: "XMLTV feed"]
-    
-          --feed-link <FEED_LINK>
-              RSS feed URL
-              
-              [default: ]
-    
-          --feed-indent <FEED_INDENT>
-              RSS feed indentation
-              
-              [default: 2]
     
           --xmltv-datetime-format <XMLTV_DATETIME_FORMAT>
               XMLTV date and time format
               [default fallback: "%Y%m%d%H%M%S"]
-              
+    
               [default: "%Y%m%d%H%M%S %z"]
     
       -h, --help
@@ -69,6 +72,7 @@ Usage
     
       -V, --version
               Print version
+
 
 Library usage
 -------------

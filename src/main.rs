@@ -31,8 +31,8 @@ struct Args {
     feed_date_format: String,
 
     /// RSS feed description.
-    #[arg(long, default_value = DEFAULT_RSS_CHANNEL_DESCRIPTION)]
-    feed_description: String,
+    #[arg(long)]
+    feed_description: Option<String>,
 
     /// RSS feed indentation.
     #[arg(long, default_value_t = DEFAULT_XML_INDENT)]
@@ -80,7 +80,9 @@ fn run(args: Args) -> Result<(), Error> {
     let channel = export(
         &args.feed_title,
         &args.feed_link,
-        Some(&args.feed_description),
+        args.feed_description
+            .as_deref()
+            .or(Some(DEFAULT_RSS_CHANNEL_DESCRIPTION)),
         &options,
         args.file.as_deref(),
     )?;
