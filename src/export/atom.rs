@@ -1,10 +1,13 @@
-use chrono::FixedOffset;
-use chrono::{DateTime, Local};
+use atom_syndication::{
+    Entry, EntryBuilder, Feed, FeedBuilder, GeneratorBuilder, LinkBuilder, Text,
+};
+use chrono::{DateTime, FixedOffset, Local};
 use quick_xml::de::from_str;
-use rss::{Channel, ChannelBuilder, Guid, Item, ItemBuilder};
 use std::fs;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io;
-use xmltv::{Programme, Tv};
+use uuid::Uuid;
+use xmltv::{Channel, Programme, Tv};
 
 use crate::error::Error;
 use crate::export::{Options, Visitor, GUID_DATETIME_FORMAT};
@@ -12,17 +15,17 @@ use crate::export::{DEFAULT_FEED_CHANNEL_DESCRIPTION, DEFAULT_FEED_CHANNEL_TITLE
 use crate::xmltv::{find_name, find_value, first_url, parse_from_str};
 use crate::xmltv::{DEFAULT_XMLTV_DATETIME_FORMAT, DEFAULT_XMLTV_DATETIME_FORMAT_UTC};
 
-/// Exports an XMLTV TV listing to an RSS channel/feed.
+/// Exports an XMLTV TV listing to an Atom feed.
 pub fn export(
     title: &str,
     link: &str,
-    description: Option<&str>,
+    subtitle: Option<&str>,
     options: &Options,
     // reader: &mut impl Read,
     file: Option<&str>,
-) -> Result<Channel, Error> {
+) -> Result<Feed, Error> {
     let last_build_date = Local::now();
-    let (xmltv_listing, pub_date) = match &file {
+    let (xmltv_listing, updated) = match &file {
         Some(file) if *file != "-" => (
             fs::read_to_string(file)?,
             DateTime::<Local>::from(fs::metadata(file)?.modified()?),
@@ -31,47 +34,44 @@ pub fn export(
     };
     let xmltv_listing: Tv = from_str(&xmltv_listing)?;
 
-    let mut visitor = Rss::new(
+    let mut visitor = Atom::new(
         title,
         link,
-        description,
-        Some(pub_date),
-        Some(last_build_date),
+        subtitle,
+        Some(updated),
         options,
         &xmltv_listing.channels,
     );
 
-    super::export::<Channel>(&mut visitor, &xmltv_listing)
+    super::export::<Feed>(&mut visitor, &xmltv_listing)
 }
 
 //
 
-/// RSS channel/feed export struct.
-pub(crate) struct Rss<'a> {
+/// Atom feed export struct.
+pub(crate) struct Atom<'a> {
     title: &'a str,
     link: &'a str,
-    description: Option<&'a str>,
-    pub_date: Option<DateTime<Local>>,
-    last_build_date: Option<DateTime<Local>>,
+    subtitle: Option<&'a str>,
+    updated: Option<DateTime<Local>>,
     options: &'a Options<'a>,
 
     // Visitor state
-    xmltv_channels: &'a Vec<xmltv::Channel>,
-    channel: ChannelBuilder,
-    items: Vec<Item>,
+    xmltv_channels: &'a Vec<Channel>,
+    feed: FeedBuilder,
+    entries: Vec<Entry>,
 }
 
-impl<'a> Rss<'a> {
+impl<'a> Atom<'a> {
     pub fn new(
         title: &'a str,
         link: &'a str,
-        description: Option<&'a str>,
-        pub_date: Option<DateTime<Local>>,
-        last_build_date: Option<DateTime<Local>>,
+        subtitle: Option<&'a str>,
+        updated: Option<DateTime<Local>>,
         options: &'a Options,
 
         // Input data
-        xmltv_channels: &'a Vec<xmltv::Channel>,
+        xmltv_channels: &'a Vec<Channel>,
     ) -> Self {
         let title = if !title.is_empty() {
             title
@@ -82,19 +82,18 @@ impl<'a> Rss<'a> {
         Self {
             title,
             link,
-            description,
-            pub_date,
-            last_build_date,
+            subtitle,
+            updated,
             options,
 
             // Visitor state
             xmltv_channels,
-            channel: ChannelBuilder::default(),
-            items: vec![],
+            feed: FeedBuilder::default(),
+            entries: vec![],
         }
     }
 
-    fn item_description(
+    fn entry_summary(
         &mut self,
         language: Option<&str>,
         title: &str,
@@ -139,7 +138,7 @@ impl<'a> Rss<'a> {
             .collect::<Vec<_>>()
             .join("<br/>");
 
-        let description = format!("\
+        let summary = format!("\
 <table>\
 <tr><td align=\"right\" valign=\"top\">Title:</td><td>{title}</td></tr>\
 <tr><td align=\"right\" valign=\"top\">Channel:</td><td>{channel}</td></tr>\
@@ -150,40 +149,44 @@ impl<'a> Rss<'a> {
 <tr><td align=\"right\" valign=\"top\">Description:</td><td>{desc}</td></tr>\
 </table>");
 
-        Ok(description)
+        Ok(summary)
     }
 }
 
-impl Visitor for Rss<'_> {
-    type Output = Channel;
+impl Visitor for Atom<'_> {
+    type Output = Feed;
 
-    /// Exports from XMLTV TV listing to RSS channel/feed.
+    /// Exports from XMLTV TV listing to Atom feed.
     fn visit_tv(&mut self, _xmltv_listing: &Tv) -> Result<(), Error> {
-        self.channel
+        self.feed
             .title(self.title)
-            .link(self.link)
-            .description(self.description.unwrap_or(DEFAULT_FEED_CHANNEL_DESCRIPTION));
+            .link(LinkBuilder::default().href(self.link).build())
+            .generator(
+                GeneratorBuilder::default()
+                    .value(DEFAULT_FEED_CHANNEL_DESCRIPTION)
+                    .build(),
+            );
 
+        if let Some(subtitle) = self.subtitle {
+            self.feed.subtitle(Text::plain(subtitle));
+        }
         if let Some(language) = self.options.language {
-            self.channel.language(language.to_string());
+            self.feed.lang(language.to_string());
         }
-        if let Some(pub_date) = self.pub_date {
-            self.channel.pub_date(pub_date.to_rfc2822());
-        }
-        if let Some(last_build_date) = self.last_build_date {
-            self.channel.last_build_date(last_build_date.to_rfc2822());
+        if let Some(updated) = self.updated {
+            self.feed.updated(updated);
         }
 
         Ok(())
     }
 
     fn visit_programmes_start(&mut self) -> Result<(), Error> {
-        self.items.clear();
+        self.entries.clear();
 
         Ok(())
     }
 
-    /// Exports from XMLTV programme to RSS item.
+    /// Exports from XMLTV programme to Atom entry.
     fn visit_programme(&mut self, xmltv_programme: &Programme) -> Result<(), Error> {
         // let language = self.options.language;
         let language = self.options.language.filter(|l| !l.is_empty());
@@ -211,9 +214,9 @@ impl Visitor for Rss<'_> {
 
         let title = find_value(&xmltv_programme.titles, language);
 
-        let link = first_url(&xmltv_programme.urls);
+        let link = first_url(&xmltv_programme.urls).unwrap_or_default();
 
-        let description = self.item_description(
+        let summary = self.entry_summary(
             language,
             title,
             channel_id,
@@ -222,56 +225,61 @@ impl Visitor for Rss<'_> {
             xmltv_programme,
         )?;
 
-        let mut guid = Guid::default();
-        guid.set_value(format!(
-            "{channel_id}-{}",
-            starttime_dt.format(GUID_DATETIME_FORMAT)
-        ));
-        let guid = guid;
+        let hash_data = format!("{channel_id}-{}", starttime_dt.format(GUID_DATETIME_FORMAT));
+        let uuid = uuid(hash_data.as_bytes());
 
-        let pub_date = starttime_dt.to_rfc2822();
+        let published = starttime_dt;
 
-        let item = ItemBuilder::default()
+        let entry = EntryBuilder::default()
             .title(title.to_string())
-            .link(link)
-            .description(description.to_string())
-            .guid(Some(guid))
-            .pub_date(pub_date)
+            .link(LinkBuilder::default().href(link).build())
+            .summary(Text::plain(summary))
+            .id(format!("urn:uuid:{uuid}"))
+            .published(published)
+            .updated(published)
             .build();
 
-        self.items.push(item);
+        self.entries.push(entry);
 
         Ok(())
     }
 
     fn visit_programmes_end(&mut self) -> Result<(), Error> {
-        self.channel.items(&*self.items);
-        self.items.clear();
+        self.feed.entries(&*self.entries);
+        self.entries.clear();
 
         Ok(())
     }
 
-    /// Returns the exported RSS channel/feed.
+    /// Returns the exported Atom feed.
     fn result(&self) -> Result<Self::Output, Error> {
-        Ok(self.channel.build())
+        Ok(self.feed.build())
     }
+}
+
+fn uuid(hash_data: &[u8]) -> Uuid {
+    let mut hasher = DefaultHasher::new();
+    Hash::hash_slice(hash_data, &mut hasher);
+    let hash = hasher.finish();
+
+    // Uuid::from_u128(hash as u128)
+    Uuid::from_u128(hash as u128 * u64::MAX as u128)
 }
 
 //
 
 #[cfg(test)]
 mod tests {
+    use atom_syndication::WriteConfig;
     use pretty_assertions::assert_eq;
     use quick_xml::de::from_str;
-    use rss::Channel;
     use std::fs;
 
     use super::*;
     use crate::export;
 
     const DEFAULT_XML_INDENT: usize = 2;
-    const LAST_BUILD_DATE: &str = "Tue, 30 Apr 2024 12:00:00 +0000";
-    const PUB_DATE: &str = "Mon, 29 Apr 2024 12:00:00 +0000";
+    const UPDATED: &str = "Tue, 30 Apr 2024 12:00:00 +0000";
 
     #[derive(Default)]
     struct Test<'a> {
@@ -286,17 +294,17 @@ mod tests {
         const TESTS: [Test; 3] = [
             Test {
                 input_file: "tests/input/simple.xml",
-                expected_file: "tests/output/rss/simple.xml",
+                expected_file: "tests/output/atom/simple.xml",
                 language: None,
             },
             Test {
                 input_file: "tests/input/simple.xml",
-                expected_file: "tests/output/rss/simple-language.xml",
+                expected_file: "tests/output/atom/simple-language.xml",
                 language: Some("fr-FR"),
             },
             Test {
                 input_file: "tests/input/timezones.xml",
-                expected_file: "tests/output/rss/timezones.xml",
+                expected_file: "tests/output/atom/timezones.xml",
                 language: None,
             },
         ];
@@ -317,8 +325,8 @@ mod tests {
             // Get input arguments
             let input = fs::read_to_string(input_file).unwrap();
             let link = "";
-            let last_build_date = DateTime::parse_from_rfc2822(LAST_BUILD_DATE).unwrap();
-            let pub_date = DateTime::parse_from_rfc2822(PUB_DATE).unwrap();
+            let subtitle = None;
+            let updated = DateTime::parse_from_rfc2822(UPDATED).unwrap();
             // let options = Options::default();
             let options = Options {
                 language: test.language,
@@ -327,23 +335,22 @@ mod tests {
             let xmltv_listing: Tv = from_str(&input).unwrap();
 
             // Run test
-            let mut visitor = Rss::new(
+            let mut visitor = Atom::new(
                 DEFAULT_FEED_CHANNEL_TITLE,
                 link,
-                None,
-                Some(pub_date.into()),
-                Some(last_build_date.into()),
+                subtitle,
+                Some(updated.into()),
                 &options,
                 &xmltv_listing.channels,
             );
-            let channel = export::export::<Channel>(&mut visitor, &xmltv_listing).unwrap();
+            let feed = export::export::<Feed>(&mut visitor, &xmltv_listing).unwrap();
 
-            let output = String::from_utf8(
-                channel
-                    .pretty_write_to(Vec::new(), b' ', DEFAULT_XML_INDENT)
-                    .unwrap(),
-            )
-            .unwrap();
+            let config = WriteConfig {
+                indent_size: DEFAULT_XML_INDENT.into(),
+                ..Default::default()
+            };
+            let output =
+                String::from_utf8(feed.write_with_config(Vec::new(), config).unwrap()).unwrap();
 
             // Check result
             // assert_eq!(output, expected, "for output file {expected_file} and failed formatted content:\n{output}\n");

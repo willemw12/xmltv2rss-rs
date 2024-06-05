@@ -1,7 +1,7 @@
 xmltv2rss
 =========
 
-Generate an RSS feed from an XMLTV TV listing.
+Generate an RSS or Atom feed from an XMLTV TV listing.
 
 
 Installation
@@ -11,6 +11,10 @@ The following requires [Rust](https://www.rust-lang.org/).
 
 To install xmltv2rss, for example, in folder ~/.local/bin, run:
 
+    $ cargo install --git=https://github.com/willemw12/xmltv2rss-rs.git --no-track --root=$HOME/.local
+
+Or the same, but download separately:
+
     $ git clone https://github.com/willemw12/xmltv2rss-rs.git
     $ cargo install --no-track --path=./xmltv2rss-rs --root=$HOME/.local
 
@@ -19,7 +23,7 @@ Usage
 -----
 
     $ xmltv2rss --help
-    Generate an RSS feed from an XMLTV TV listing. Print the result to standard output.
+    Generate an RSS or Atom feed from an XMLTV TV listing. Print the result to standard output.
     
     For information about date and time format strings ("%Y", "%H", etc.), search for "strftime" on <https://docs.rs/chrono/latest/chrono/index.html>.
     
@@ -31,35 +35,44 @@ Usage
     
     Options:
       -d, --feed-date-format <FEED_DATE_FORMAT>
-              RSS feed date format. Examples: "%%Y-%%m-%%d", "%%a %%d %%B, %%Y", "%%x"
+              Output feed date format. Examples: "%%Y-%%m-%%d", "%%a %%d %%B, %%Y", "%%x"
     
               [default: "%a %d %B, %Y"]
     
           --feed-description <FEED_DESCRIPTION>
-              RSS feed description
+              Output feed description
     
           --feed-indent <FEED_INDENT>
-              RSS feed indentation
+              Output feed indentation
     
               [default: 2]
     
           --feed-language <FEED_LANGUAGE>
-              RSS feed language
+              Output feed language
     
           --feed-link <FEED_LINK>
-              RSS feed URL
+              Output feed URL
     
               [default: ]
     
       -t, --feed-time-format <FEED_TIME_FORMAT>
-              RSS feed time format. Examples: "%%H:%%M", "%%I:%%M %%p", "%%X"
+              Output feed time format. Examples: "%%H:%%M", "%%I:%%M %%p", "%%X"
     
               [default: %H:%M]
     
           --feed-title <FEED_TITLE>
-              RSS feed title
+              Output feed title
     
               [default: "XMLTV feed"]
+    
+          --feed-type <FEED_TYPE>
+              Output feed type
+    
+              [default: rss]
+    
+              Possible values:
+              - atom
+              - rss:  Rss 2.0
     
           --xmltv-datetime-format <XMLTV_DATETIME_FORMAT>
               XMLTV date and time format
@@ -79,18 +92,24 @@ Library usage
 
 ```rust
 use std::io;
-use xmltv2rss::export::rss::{export, OptionsBuilder};
+use xmltv2rss::error::Result;
+use xmltv2rss::export::{rss, OptionsBuilder};
 
-// let options = Options::default();
-let options = OptionsBuilder::default()
-    // .language(string.as_str())
-    .language("en")
-    .build()?;
+fn print() -> Result<()> {
+    // let options = rss::Options::default();
+    let options = OptionsBuilder::default()
+        // .language(&*string)
+        // .language(string.as_str())
+        .language("en")
+        .build()?;
 
-let channel = export("Title", "https://example.com/", Some("Description"),
-                     &options, Some("file.xml"))?;
+    let channel = rss::export("Title", "https://example.com/", Some("Description"),
+                              &options, Some("./tests/input/simple.xml"))?;
 
-channel.pretty_write_to(io::stdout(), b' ', 2)?;
+    channel.pretty_write_to(io::stdout(), b' ', 2)?;
+
+    Ok(())
+}
 ```
 
 

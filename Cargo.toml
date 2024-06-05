@@ -1,6 +1,6 @@
 [package]
 name = "xmltv2rss"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["willemw12 <willemw12@gmail.com>"]
 edition = "2021"
 license = "GPL-3.0-or-later"
@@ -9,10 +9,8 @@ homepage = "https://github.com/willemw12/xmltv2rss-rs"
 #documentation = "https://github.com/willemw12/xmltv2rss-rs"
 repository = "https://github.com/willemw12/xmltv2rss-rs"
 readme = "README.md"
-keywords = ["epg", "rss", "tv", "xmltv"]
+keywords = ["atom", "epg", "rss", "tv", "xmltv"]
 categories = ["command-line-utilities"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 # [[bin]]
 # name = "xmltv2rss"
@@ -22,11 +20,16 @@ categories = ["command-line-utilities"]
 # build-binary = ["dep:clap"]
 
 [dependencies]
-# clap = { version = "4.5.4", features = ["cargo", "derive"], optional = true }
-clap = { version = "4.5.4", features = ["cargo", "derive"] }
+atom_syndication = "0.12.3"
 chrono = "0.4.38"
+# clap = { version = "...", features = ["cargo", "derive"], optional = true }
+clap = { version = "4.5.4", features = ["cargo", "derive"] }
 derive_builder = "0.20.0"
 quick-xml = { version = "0.31", features = ["serialize"] }
-rss = "2.0.7"
-thiserror = "1.0.59"
+rss = "2.0.8"
+thiserror = "1.0.61"
+uuid = { version = "1.8.0", features = ["v4", "macro-diagnostics", "serde"] }
 xmltv = "0.9.6"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
