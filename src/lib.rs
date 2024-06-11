@@ -8,7 +8,7 @@
 //! use xmltv2rss::export::{rss, OptionsBuilder};
 //!
 //! fn print() -> Result<()> {
-//!     // let options = rss::Options::default();
+//!     // let options = xmltv2rss::export::Options::default();
 //!     let options = OptionsBuilder::default()
 //!         // .language(&*string)
 //!         // .language(string.as_str())
