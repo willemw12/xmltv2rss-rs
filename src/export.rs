@@ -101,7 +101,7 @@ pub trait Visitor {
     fn result(&self) -> Result<Self::Output, Error>;
 }
 
-/// Exports from XMLTV to some type T.
+/// Exports XMLTV data to data of type T, produced by a visitor implementation.
 pub(crate) fn export<T>(visitor: &mut impl Visitor<Output = T>, listing: &Tv) -> Result<T, Error> {
     // visitor.visit_tv_start()?;
 
