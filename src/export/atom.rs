@@ -12,8 +12,8 @@ use xmltv::{Channel, Programme, Tv};
 use crate::error::Error;
 use crate::export::{Options, Visitor, GUID_DATETIME_FORMAT};
 use crate::export::{DEFAULT_FEED_CHANNEL_DESCRIPTION, DEFAULT_FEED_CHANNEL_TITLE};
+use crate::xmltv::DEFAULT_XMLTV_DATETIME_FORMAT_UTC;
 use crate::xmltv::{find_name, find_value, first_url, parse_from_str};
-use crate::xmltv::{DEFAULT_XMLTV_DATETIME_FORMAT, DEFAULT_XMLTV_DATETIME_FORMAT_UTC};
 
 /// Exports an XMLTV TV listing to an Atom feed.
 pub fn export(
@@ -201,12 +201,12 @@ impl Visitor for Atom<'_> {
 
         let starttime_dt = parse_from_str(
             starttime,
-            DEFAULT_XMLTV_DATETIME_FORMAT,
+            self.options.xmltv_datetime_format,
             DEFAULT_XMLTV_DATETIME_FORMAT_UTC,
         )?;
         let stoptime_dt = parse_from_str(
             stoptime,
-            DEFAULT_XMLTV_DATETIME_FORMAT,
+            self.options.xmltv_datetime_format,
             DEFAULT_XMLTV_DATETIME_FORMAT_UTC,
         )?;
 
