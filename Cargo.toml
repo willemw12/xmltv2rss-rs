@@ -23,12 +23,12 @@ categories = ["command-line-utilities"]
 atom_syndication = "0.12.3"
 chrono = "0.4.38"
 # clap = { version = "...", features = ["cargo", "derive"], optional = true }
-clap = { version = "4.5.4", features = ["cargo", "derive"] }
+clap = { version = "4.5.7", features = ["cargo", "derive"] }
 derive_builder = "0.20.0"
-quick-xml = { version = "0.31", features = ["serialize"] }
+quick-xml = { version = "0.33", features = ["serialize"] }
 rss = "2.0.8"
 thiserror = "1.0.61"
-uuid = { version = "1.8.0", features = ["v4", "macro-diagnostics", "serde"] }
+uuid = { version = "1.8.0", features = ["macro-diagnostics", "serde", "v4"] }
 xmltv = "0.9.6"
 
 [dev-dependencies]
