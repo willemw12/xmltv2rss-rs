@@ -101,7 +101,7 @@ fn export(args: &Args) -> Result<()> {
     }
 }
 
-fn export_to_atom(args: &Args, options: &Options, writer: &mut impl Write) -> Result<()> {
+fn export_to_atom(args: &Args, options: &Options<'_>, writer: &mut impl Write) -> Result<()> {
     let feed = atom::export(
         &args.feed_title,
         &args.feed_link,
@@ -124,7 +124,7 @@ fn export_to_atom(args: &Args, options: &Options, writer: &mut impl Write) -> Re
     Ok(())
 }
 
-fn export_to_rss(args: &Args, options: &Options, writer: &mut impl Write) -> Result<()> {
+fn export_to_rss(args: &Args, options: &Options<'_>, writer: &mut impl Write) -> Result<()> {
     let channel = rss::export(
         &args.feed_title,
         &args.feed_link,

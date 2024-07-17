@@ -17,7 +17,7 @@ pub fn export(
     title: &str,
     link: &str,
     description: Option<&str>,
-    options: &Options,
+    options: &Options<'_>,
     // reader: &mut impl Read,
     file: Option<&str>,
 ) -> Result<Channel, Error> {
@@ -68,15 +68,15 @@ impl<'a> Rss<'a> {
         description: Option<&'a str>,
         pub_date: Option<DateTime<Local>>,
         last_build_date: Option<DateTime<Local>>,
-        options: &'a Options,
+        options: &'a Options<'_>,
 
         // Input data
         xmltv_channels: &'a Vec<xmltv::Channel>,
     ) -> Self {
-        let title = if !title.is_empty() {
-            title
-        } else {
+        let title = if title.is_empty() {
             DEFAULT_FEED_CHANNEL_TITLE
+        } else {
+            title
         };
 
         Self {
@@ -102,7 +102,7 @@ impl<'a> Rss<'a> {
         starttime_dt: DateTime<FixedOffset>,
         stoptime_dt: DateTime<FixedOffset>,
         xmltv_programme: &Programme,
-    ) -> Result<String, Error> {
+    ) -> String {
         let channel = if let Some(channel_callsign) = self
             .xmltv_channels
             .iter()
@@ -135,7 +135,7 @@ impl<'a> Rss<'a> {
         let desc = desc
             .trim()
             .lines()
-            .map(|line| line.trim())
+            .map(str::trim)
             .collect::<Vec<_>>()
             .join("<br/>");
 
@@ -150,7 +150,7 @@ impl<'a> Rss<'a> {
 <tr><td align=\"right\" valign=\"top\">Description:</td><td>{desc}</td></tr>\
 </table>");
 
-        Ok(description)
+        description
     }
 }
 
@@ -220,7 +220,7 @@ impl Visitor for Rss<'_> {
             starttime_dt,
             stoptime_dt,
             xmltv_programme,
-        )?;
+        );
 
         let mut guid = Guid::default();
         guid.set_value(format!(

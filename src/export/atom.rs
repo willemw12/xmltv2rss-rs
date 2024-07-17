@@ -20,7 +20,7 @@ pub fn export(
     title: &str,
     link: &str,
     subtitle: Option<&str>,
-    options: &Options,
+    options: &Options<'_>,
     // reader: &mut impl Read,
     file: Option<&str>,
 ) -> Result<Feed, Error> {
@@ -68,15 +68,15 @@ impl<'a> Atom<'a> {
         link: &'a str,
         subtitle: Option<&'a str>,
         updated: Option<DateTime<Local>>,
-        options: &'a Options,
+        options: &'a Options<'_>,
 
         // Input data
         xmltv_channels: &'a Vec<Channel>,
     ) -> Self {
-        let title = if !title.is_empty() {
-            title
-        } else {
+        let title = if title.is_empty() {
             DEFAULT_FEED_CHANNEL_TITLE
+        } else {
+            title
         };
 
         Self {
@@ -101,7 +101,7 @@ impl<'a> Atom<'a> {
         starttime_dt: DateTime<FixedOffset>,
         stoptime_dt: DateTime<FixedOffset>,
         xmltv_programme: &Programme,
-    ) -> Result<String, Error> {
+    ) -> String {
         let channel = if let Some(channel_callsign) = self
             .xmltv_channels
             .iter()
@@ -134,7 +134,7 @@ impl<'a> Atom<'a> {
         let desc = desc
             .trim()
             .lines()
-            .map(|line| line.trim())
+            .map(str::trim)
             .collect::<Vec<_>>()
             .join("<br/>");
 
@@ -149,7 +149,7 @@ impl<'a> Atom<'a> {
 <tr><td align=\"right\" valign=\"top\">Description:</td><td>{desc}</td></tr>\
 </table>");
 
-        Ok(summary)
+        summary
     }
 }
 
@@ -223,7 +223,7 @@ impl Visitor for Atom<'_> {
             starttime_dt,
             stoptime_dt,
             xmltv_programme,
-        )?;
+        );
 
         let hash_data = format!("{channel_id}-{}", starttime_dt.format(GUID_DATETIME_FORMAT));
         let uuid = uuid(hash_data.as_bytes());
