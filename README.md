@@ -25,17 +25,17 @@ Usage
     $ xmltv2rss --help
     Generate an RSS or Atom feed from an XMLTV TV listing. Print the result to standard output.
     
-    For information about date and time format strings ("%Y", "%H", etc.), search for "strftime" on <https://docs.rs/chrono/latest/chrono/index.html>.
+    For information about date and time format strings (%Y, %H, etc.), search for 'strftime' on <https://docs.rs/chrono/latest/chrono/index.html>.
     
     Usage: xmltv2rss [OPTIONS] [FILE]
     
     Arguments:
       [FILE]
-              Read XMLTV file or from standard input if '-'
+              Read the XMLTV TV listing from a file or from standard input if '-'
     
     Options:
       -d, --feed-date-format <FEED_DATE_FORMAT>
-              Output feed date format. Examples: "%%Y-%%m-%%d", "%%a %%d %%B, %%Y", "%%x"
+              Output feed date format. Examples: "%Y-%m-%d", "%a %d %B, %Y", "%x"
     
               [default: "%a %d %B, %Y"]
     
@@ -56,7 +56,7 @@ Usage
               [default: ]
     
       -t, --feed-time-format <FEED_TIME_FORMAT>
-              Output feed time format. Examples: "%%H:%%M", "%%I:%%M %%p", "%%X"
+              Output feed time format. Examples: "%H:%M", "%I:%M %p", "%X"
     
               [default: %H:%M]
     

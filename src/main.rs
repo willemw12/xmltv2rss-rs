@@ -28,12 +28,12 @@ enum FeedType {
 
 /// Generate an RSS or Atom feed from an XMLTV TV listing. Print the result to standard output.
 ///
-/// For information about date and time format strings ("%Y", "%H", etc.),
-/// search for "strftime" on <https://docs.rs/chrono/latest/chrono/index.html>.
+/// For information about date and time format strings (%Y, %H, etc.),
+/// search for 'strftime' on <https://docs.rs/chrono/latest/chrono/index.html>.
 #[derive(Parser)]
 #[command(version = crate_version!())]
 struct Args {
-    /// Output feed date format. Examples: "%%Y-%%m-%%d", "%%a %%d %%B, %%Y", "%%x".
+    /// Output feed date format. Examples: "%Y-%m-%d", "%a %d %B, %Y", "%x".
     #[arg(long, short = 'd', default_value = DEFAULT_FEED_DATE_FORMAT)]
     feed_date_format: String,
 
@@ -53,7 +53,7 @@ struct Args {
     #[arg(long, default_value = "")]
     feed_link: String,
 
-    /// Output feed time format. Examples: "%%H:%%M", "%%I:%%M %%p", "%%X".
+    /// Output feed time format. Examples: "%H:%M", "%I:%M %p", "%X".
     #[arg(long, short = 't', default_value = DEFAULT_FEED_TIME_FORMAT)]
     feed_time_format: String,
 
@@ -71,7 +71,7 @@ struct Args {
           help = format!("XMLTV date and time format\n[default fallback: {DEFAULT_XMLTV_DATETIME_FORMAT_UTC:?}]"))]
     xmltv_datetime_format: String,
 
-    /// Read XMLTV file or from standard input if '-'.
+    /// Read the XMLTV TV listing from a file or from standard input if '-'.
     file: Option<String>,
 }
 
