@@ -1,5 +1,5 @@
-use chrono::FixedOffset;
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Utc};
+use chrono::{FixedOffset, Local};
 use quick_xml::de::from_str;
 use rss::{Channel, ChannelBuilder, Guid, Item, ItemBuilder};
 use std::fs;
@@ -7,8 +7,8 @@ use std::io;
 use xmltv::{Programme, Tv};
 
 use crate::error::Error;
-use crate::export::{Options, Visitor, GUID_DATETIME_FORMAT};
 use crate::export::{DEFAULT_FEED_CHANNEL_DESCRIPTION, DEFAULT_FEED_CHANNEL_TITLE};
+use crate::export::{GUID_DATETIME_FORMAT, Options, Visitor};
 use crate::xmltv::DEFAULT_XMLTV_DATETIME_FORMAT_UTC;
 use crate::xmltv::{find_name, find_value, first_url, parse_from_str};
 
@@ -21,12 +21,21 @@ pub fn export(
     // reader: &mut impl Read,
     file: Option<&str>,
 ) -> Result<Channel, Error> {
-    let last_build_date = Local::now();
-    let (xmltv_listing, pub_date) = match &file {
-        Some(file) if *file != "-" => (
-            fs::read_to_string(file)?,
-            DateTime::<Local>::from(fs::metadata(file)?.modified()?),
-        ),
+    let last_build_date = if options.utc_datetime {
+        Utc::now().into()
+    } else {
+        Local::now().into()
+    };
+    let (xmltv_listing, pub_date): (String, DateTime<FixedOffset>) = match &file {
+        Some(file) if *file != "-" => {
+            let modified = fs::metadata(file)?.modified()?;
+            let modified_dt = if options.utc_datetime {
+                DateTime::<Utc>::from(modified).into()
+            } else {
+                DateTime::<Local>::from(modified).into()
+            };
+            (fs::read_to_string(file)?, modified_dt)
+        }
         _ => (io::read_to_string(io::stdin())?, last_build_date),
     };
     let xmltv_listing: Tv = from_str(&xmltv_listing)?;
@@ -51,8 +60,8 @@ pub(crate) struct Rss<'a> {
     title: &'a str,
     link: &'a str,
     description: Option<&'a str>,
-    pub_date: Option<DateTime<Local>>,
-    last_build_date: Option<DateTime<Local>>,
+    pub_date: Option<DateTime<FixedOffset>>,
+    last_build_date: Option<DateTime<FixedOffset>>,
     options: &'a Options<'a>,
 
     // Visitor state
@@ -66,8 +75,8 @@ impl<'a> Rss<'a> {
         title: &'a str,
         link: &'a str,
         description: Option<&'a str>,
-        pub_date: Option<DateTime<Local>>,
-        last_build_date: Option<DateTime<Local>>,
+        pub_date: Option<DateTime<FixedOffset>>,
+        last_build_date: Option<DateTime<FixedOffset>>,
         options: &'a Options<'_>,
 
         // Input data
@@ -139,7 +148,8 @@ impl<'a> Rss<'a> {
             .collect::<Vec<_>>()
             .join("<br/>");
 
-        let description = format!("\
+        let description = format!(
+            "\
 <table>\
 <tr><td align=\"right\" valign=\"top\">Title:</td><td>{title}</td></tr>\
 <tr><td align=\"right\" valign=\"top\">Channel:</td><td>{channel}</td></tr>\
@@ -148,7 +158,8 @@ impl<'a> Rss<'a> {
 <tr><td align=\"right\" valign=\"top\" style=\"white-space: nowrap\">Length:</td><td>{airtime_length}</td></tr>\
 <tr><td align=\"right\" valign=\"top\">Category:</td><td>{category}</td></tr>\
 <tr><td align=\"right\" valign=\"top\">Description:</td><td>{desc}</td></tr>\
-</table>");
+</table>"
+        );
 
         description
     }
@@ -234,7 +245,7 @@ impl Visitor for Rss<'_> {
         let item = ItemBuilder::default()
             .title(title.to_string())
             .link(link)
-            .description(description.to_string())
+            .description(description.clone())
             .guid(Some(guid))
             .pub_date(pub_date)
             .build();
@@ -261,6 +272,7 @@ impl Visitor for Rss<'_> {
 
 #[cfg(test)]
 mod tests {
+    //use chrono::Utc;
     use pretty_assertions::assert_eq;
     use quick_xml::de::from_str;
     use rss::Channel;
@@ -282,8 +294,8 @@ mod tests {
 
     #[test]
     fn test() {
-        // const TESTS: [Test; _] = [Test {
-        const TESTS: [Test; 3] = [
+        // const TESTS: [Test; _] = {
+        const TESTS: [Test<'_>; 3] = [
             Test {
                 input_file: "tests/input/simple.xml",
                 expected_file: "tests/output/rss/simple.xml",
@@ -301,7 +313,7 @@ mod tests {
             },
         ];
 
-        for test in TESTS.iter() {
+        for test in &TESTS {
             // Get test values
             let expected_file = test.expected_file;
             let input_file = test.input_file;
@@ -309,10 +321,6 @@ mod tests {
             let expected = fs::read_to_string(expected_file).unwrap();
             // fs::read_to_string() adds a newline character at the end of the string
             let expected = expected.trim_end();
-
-            // Run tests in the expected timezone
-            // May not work on all platforms and set_var() will be defined as "unsafe" in a future Rust release
-            std::env::set_var("TZ", "UTC");
 
             // Get input arguments
             let input = fs::read_to_string(input_file).unwrap();
@@ -331,8 +339,8 @@ mod tests {
                 DEFAULT_FEED_CHANNEL_TITLE,
                 link,
                 None,
-                Some(pub_date.into()),
-                Some(last_build_date.into()),
+                Some(pub_date),
+                Some(last_build_date),
                 &options,
                 &xmltv_listing.channels,
             );

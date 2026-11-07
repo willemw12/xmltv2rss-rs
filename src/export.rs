@@ -29,6 +29,9 @@ pub struct Options<'a> {
     #[builder(default = "DEFAULT_FEED_TIME_FORMAT")]
     pub time_format: &'a str,
 
+    #[builder(default = false)]
+    pub utc_datetime: bool,
+
     /// See [`DEFAULT_XMLTV_DATETIME_FORMAT`].
     #[builder(default = "DEFAULT_XMLTV_DATETIME_FORMAT")]
     pub xmltv_datetime_format: &'a str,
@@ -42,6 +45,8 @@ impl Default for Options<'_> {
             time_format: DEFAULT_FEED_TIME_FORMAT,
 
             xmltv_datetime_format: DEFAULT_XMLTV_DATETIME_FORMAT,
+
+            utc_datetime: false,
         }
     }
 }

@@ -1,7 +1,7 @@
 use atom_syndication::{
     Entry, EntryBuilder, Feed, FeedBuilder, GeneratorBuilder, LinkBuilder, Text,
 };
-use chrono::{DateTime, FixedOffset, Local};
+use chrono::{DateTime, FixedOffset, Local, Utc};
 use quick_xml::de::from_str;
 use std::fs;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -10,8 +10,8 @@ use uuid::Uuid;
 use xmltv::{Channel, Programme, Tv};
 
 use crate::error::Error;
-use crate::export::{Options, Visitor, GUID_DATETIME_FORMAT};
 use crate::export::{DEFAULT_FEED_CHANNEL_DESCRIPTION, DEFAULT_FEED_CHANNEL_TITLE};
+use crate::export::{GUID_DATETIME_FORMAT, Options, Visitor};
 use crate::xmltv::DEFAULT_XMLTV_DATETIME_FORMAT_UTC;
 use crate::xmltv::{find_name, find_value, first_url, parse_from_str};
 
@@ -24,12 +24,21 @@ pub fn export(
     // reader: &mut impl Read,
     file: Option<&str>,
 ) -> Result<Feed, Error> {
-    let last_build_date = Local::now();
-    let (xmltv_listing, updated) = match &file {
-        Some(file) if *file != "-" => (
-            fs::read_to_string(file)?,
-            DateTime::<Local>::from(fs::metadata(file)?.modified()?),
-        ),
+    let last_build_date = if options.utc_datetime {
+        Utc::now().into()
+    } else {
+        Local::now().into()
+    };
+    let (xmltv_listing, updated): (String, DateTime<FixedOffset>) = match &file {
+        Some(file) if *file != "-" => {
+            let modified = fs::metadata(file)?.modified()?;
+            let modified_dt = if options.utc_datetime {
+                DateTime::<Utc>::from(modified).into()
+            } else {
+                DateTime::<Local>::from(modified).into()
+            };
+            (fs::read_to_string(file)?, modified_dt)
+        }
         _ => (io::read_to_string(io::stdin())?, last_build_date),
     };
     let xmltv_listing: Tv = from_str(&xmltv_listing)?;
@@ -53,7 +62,7 @@ pub(crate) struct Atom<'a> {
     title: &'a str,
     link: &'a str,
     subtitle: Option<&'a str>,
-    updated: Option<DateTime<Local>>,
+    updated: Option<DateTime<FixedOffset>>,
     options: &'a Options<'a>,
 
     // Visitor state
@@ -67,7 +76,7 @@ impl<'a> Atom<'a> {
         title: &'a str,
         link: &'a str,
         subtitle: Option<&'a str>,
-        updated: Option<DateTime<Local>>,
+        updated: Option<DateTime<FixedOffset>>,
         options: &'a Options<'_>,
 
         // Input data
@@ -138,7 +147,8 @@ impl<'a> Atom<'a> {
             .collect::<Vec<_>>()
             .join("<br/>");
 
-        let summary = format!("\
+        let summary = format!(
+            "\
 <table>\
 <tr><td align=\"right\" valign=\"top\">Title:</td><td>{title}</td></tr>\
 <tr><td align=\"right\" valign=\"top\">Channel:</td><td>{channel}</td></tr>\
@@ -147,7 +157,8 @@ impl<'a> Atom<'a> {
 <tr><td align=\"right\" valign=\"top\" style=\"white-space: nowrap\">Length:</td><td>{airtime_length}</td></tr>\
 <tr><td align=\"right\" valign=\"top\">Category:</td><td>{category}</td></tr>\
 <tr><td align=\"right\" valign=\"top\">Description:</td><td>{desc}</td></tr>\
-</table>");
+</table>"
+        );
 
         summary
     }
@@ -262,8 +273,8 @@ fn uuid(hash_data: &[u8]) -> Uuid {
     Hash::hash_slice(hash_data, &mut hasher);
     let hash = hasher.finish();
 
-    // Uuid::from_u128(hash as u128)
-    Uuid::from_u128(hash as u128 * u64::MAX as u128)
+    // Uuid::from_u128(u128::from(hash))
+    Uuid::from_u128(u128::from(hash) * u128::from(u64::MAX))
 }
 
 //
@@ -290,8 +301,8 @@ mod tests {
 
     #[test]
     fn test() {
-        // const TESTS: [Test; _] = [Test {
-        const TESTS: [Test; 3] = [
+        // const TESTS: [Test; _] = {
+        const TESTS: [Test<'_>; 3] = [
             Test {
                 input_file: "tests/input/simple.xml",
                 expected_file: "tests/output/atom/simple.xml",
@@ -309,7 +320,7 @@ mod tests {
             },
         ];
 
-        for test in TESTS.iter() {
+        for test in &TESTS {
             // Get test values
             let expected_file = test.expected_file;
             let input_file = test.input_file;
@@ -317,10 +328,6 @@ mod tests {
             let expected = fs::read_to_string(expected_file).unwrap();
             // fs::read_to_string() adds a newline character at the end of the string
             let expected = expected.trim_end();
-
-            // Run tests in the expected timezone
-            // May not work on all platforms and set_var() will be defined as "unsafe" in a future Rust release
-            std::env::set_var("TZ", "UTC");
 
             // Get input arguments
             let input = fs::read_to_string(input_file).unwrap();
@@ -339,7 +346,7 @@ mod tests {
                 DEFAULT_FEED_CHANNEL_TITLE,
                 link,
                 subtitle,
-                Some(updated.into()),
+                Some(updated),
                 &options,
                 &xmltv_listing.channels,
             );

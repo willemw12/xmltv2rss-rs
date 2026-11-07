@@ -3,7 +3,7 @@
 //! [...more][`Args`]
 
 use atom_syndication::WriteConfig;
-use clap::{crate_version, Parser, ValueEnum};
+use clap::{Parser, ValueEnum};
 use std::io::{self, Write};
 
 mod error;
@@ -11,8 +11,8 @@ mod export;
 mod xmltv;
 
 use error::Result;
-use export::{atom, rss, Options, OptionsBuilder};
 use export::{DEFAULT_FEED_CHANNEL_TITLE, DEFAULT_FEED_DATE_FORMAT, DEFAULT_FEED_TIME_FORMAT};
+use export::{Options, OptionsBuilder, atom, rss};
 use xmltv::{DEFAULT_XMLTV_DATETIME_FORMAT, DEFAULT_XMLTV_DATETIME_FORMAT_UTC};
 
 pub const DEFAULT_XML_INDENT: u8 = 2;
@@ -31,7 +31,7 @@ enum FeedType {
 /// For information about date and time format strings (%Y, %H, etc.),
 /// search for 'strftime' on <https://docs.rs/chrono/latest/chrono/index.html>.
 #[derive(Parser)]
-#[command(version = crate_version!())]
+#[command(about, version)]
 struct Args {
     /// Output feed date format. Examples: "%Y-%m-%d", "%a %d %B, %Y", "%x".
     #[arg(long, short = 'd', default_value = DEFAULT_FEED_DATE_FORMAT)]
@@ -86,10 +86,10 @@ fn main() -> Result<()> {
 fn export(args: &Args) -> Result<()> {
     let mut options = OptionsBuilder::default();
     // if let Some(language) = &args.feed_language && !language.is_empty()
-    if let Some(language) = &args.feed_language {
-        if !language.is_empty() {
-            options.language(language.as_str());
-        }
+    if let Some(language) = &args.feed_language
+        && !language.is_empty()
+    {
+        options.language(language.as_str());
     }
     let options = options.build()?;
 

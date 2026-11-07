@@ -9,7 +9,7 @@ Installation
 
 The following requires [Rust](https://www.rust-lang.org/).
 
-To install xmltv2rss, for example, in folder ~/.local/bin, run:
+To build and install xmltv2rss, for example, in folder ~/.local/bin, run:
 
     $ cargo install --git=https://github.com/willemw12/xmltv2rss-rs.git --no-track --root=$HOME/.local
 
@@ -89,6 +89,8 @@ Usage
 
 Library usage
 -------------
+
+Read an XMLTV TV listing file, convert it to an RSS feed and print the result to standard output:
 
 ```rust
 use std::io;
